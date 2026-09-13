@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="A focused, modern todo list for keeping track of what matters.">
+  <title>Daymark | Todo List</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <section class="auth-screen" id="auth-screen" aria-labelledby="auth-title">
+    <div class="auth-card">
+      <div class="brand-lockup auth-brand">
+        <span class="brand-mark" aria-hidden="true">D</span>
+        <div>
+          <p class="eyebrow">Your daily rhythm</p>
+          <h1>Daymark</h1>
+        </div>
+      </div>
+      <p class="eyebrow" id="auth-kicker">Welcome back</p>
+      <h2 id="auth-title">Make room for what matters.</h2>
+      <p class="auth-copy" id="auth-copy">Sign in to keep your plans available wherever you are.</p>
+      <form class="auth-form" id="auth-form" novalidate>
+        <label for="auth-email">Email address</label>
+        <input id="auth-email" type="email" autocomplete="email" required>
+        <label for="auth-password">Password</label>
+        <input id="auth-password" type="password" autocomplete="current-password" minlength="6" required>
+        <button class="add-button auth-submit" id="auth-submit" type="submit">Sign in</button>
+      </form>
+      <p class="auth-feedback" id="auth-feedback" role="alert" aria-live="assertive"></p>
+      <button class="auth-toggle" id="auth-toggle" type="button">Need an account? Sign up</button>
+    </div>
+  </section>
+
+  <main class="app-shell" id="app-shell" hidden>
+    <header class="app-header">
+      <div class="brand-lockup">
+        <span class="brand-mark" aria-hidden="true">D</span>
+        <div>
+          <p class="eyebrow">Your daily rhythm</p>
+          <h1>Daymark</h1>
+        </div>
+      </div>
+
+      <div class="live-header" aria-live="polite">
+        <span class="eyebrow">Live time</span>
+        <div class="date-display" id="date-display"></div>
+      </div>
+
+      <div class="mode-switch" role="tablist" aria-label="Choose your list type">
+        <button class="mode-button is-active" type="button" data-mode="daily" role="tab" aria-selected="true" aria-controls="daily-panel">Daily Tasks</button>
+        <button class="mode-button" type="button" data-mode="shopping" role="tab" aria-selected="false" aria-controls="shopping-panel">Shopping List</button>
+      </div>
+
+      <div class="account-controls">
+        <span class="account-email" id="account-email"></span>
+        <button class="logout-button" id="logout-button" type="button">Log out</button>
+      </div>
+    </header>
+
+    <section class="welcome-panel" aria-labelledby="welcome-title">
+      <div class="welcome-copy-wrap">
+        <p class="eyebrow">Small steps, visible progress</p>
+        <h2 id="welcome-title">Make room for what matters.</h2>
+        <p class="welcome-copy">Capture the next thing, then let momentum do the rest.</p>
+      </div>
+
+      <div class="progress-orbit" aria-hidden="true">
+        <span class="progress-number" id="progress-number">0%</span>
+        <span class="progress-label">complete</span>
+      </div>
+    </section>
+
+    <section class="list-shell" aria-label="Task and shopping list controls">
+      <div class="selected-date-label" id="selected-date-label" aria-live="polite">Today</div>
+
+      <div class="date-nav-bar" aria-label="Date navigation">
+        <button class="nav-button" id="prev-date" type="button" aria-label="Previous day">&#8249;</button>
+        <div class="date-nav-label" id="date-nav-label">Sunday, Sep 13, 2026</div>
+        <button class="nav-button" id="next-date" type="button" aria-label="Next day">&#8250;</button>
+      </div>
+
+      <div class="date-utility-row">
+        <label class="date-picker-wrap" aria-label="Select a date">
+          <span class="sr-only">Select date</span>
+          <input id="date-picker" type="date" aria-label="Select date">
+        </label>
+        <button class="today-button" id="today-date" type="button">Today</button>
+      </div>
+
+      <div class="past-date-message" id="past-date-message" hidden>Past date: Cannot add new tasks or shopping items</div>
+    </section>
+
+    <div class="panel-view is-active" id="daily-panel" data-panel="daily">
+      <section class="todo-card" aria-label="Todo list">
+        <form class="task-form" id="task-form">
+          <label class="sr-only" for="task-input">What needs doing?</label>
+          <input id="task-input" name="task" type="text" placeholder="What needs doing?" maxlength="120" autocomplete="off" required>
+          <button class="add-button" id="task-add-button" type="submit"><span aria-hidden="true">+</span> Add task</button>
+        </form>
+
+        <div class="list-toolbar">
+          <div class="filter-tabs" role="group" aria-label="Filter tasks">
+            <button class="filter-button is-active" type="button" data-filter="all">All <span class="filter-count" id="all-count">0</span></button>
+            <button class="filter-button" type="button" data-filter="active">Active <span class="filter-count" id="active-count">0</span></button>
+            <button class="filter-button" type="button" data-filter="completed">Done <span class="filter-count" id="completed-count">0</span></button>
+          </div>
+          <button class="clear-button" id="clear-completed" type="button">Clear completed</button>
+        </div>
+
+        <div class="task-list" id="task-list" aria-live="polite"></div>
+        <div class="empty-state" id="empty-state">
+          <span class="empty-icon" aria-hidden="true">+</span>
+          <h3 id="empty-title">Your list is clear.</h3>
+          <p id="empty-copy">Add a task above and give your day a starting point.</p>
+        </div>
+      </section>
+    </div>
+
+    <div class="panel-view" id="shopping-panel" data-panel="shopping">
+      <section class="shopping-card" aria-label="Shopping list">
+        <form class="shopping-form" id="shopping-form">
+          <label class="sr-only" for="shopping-name">Shopping item</label>
+          <input id="shopping-name" name="shopping-item" type="text" placeholder="Item name" maxlength="80" required>
+
+          <label class="sr-only" for="shopping-quantity">Quantity</label>
+          <input id="shopping-quantity" name="shopping-quantity" type="text" maxlength="30" placeholder="Qty / unit" aria-label="Quantity or unit" />
+
+          <label class="sr-only" for="shopping-category">Category</label>
+          <select id="shopping-category" name="shopping-category" aria-label="Shopping category">
+            <option value="Groceries">Groceries</option>
+            <option value="Vegetables">Vegetables</option>
+            <option value="Pharmacy">Pharmacy</option>
+            <option value="Household">Household</option>
+            <option value="Bakery">Bakery</option>
+            <option value="Other">Other</option>
+          </select>
+
+          <button class="add-button shopping-add-button" id="shopping-add-button" type="submit"><span aria-hidden="true">+</span> Add item</button>
+        </form>
+
+        <div class="shopping-filter-bar">
+          <div class="filter-tabs shopping-tabs" role="group" aria-label="Filter shopping items">
+            <button class="filter-button shopping-filter-button is-active" type="button" data-shopping-filter="all">All</button>
+            <button class="filter-button shopping-filter-button" type="button" data-shopping-filter="pending">Pending</button>
+            <button class="filter-button shopping-filter-button" type="button" data-shopping-filter="purchased">Purchased</button>
+          </div>
+
+          <label class="category-filter-wrap">
+            <span>Category</span>
+            <select id="shopping-category-filter" aria-label="Filter by category">
+              <option value="all">All</option>
+              <option value="Groceries">Groceries</option>
+              <option value="Vegetables">Vegetables</option>
+              <option value="Pharmacy">Pharmacy</option>
+              <option value="Household">Household</option>
+              <option value="Bakery">Bakery</option>
+              <option value="Other">Other</option>
+            </select>
+          </label>
+        </div>
+
+        <div class="shopping-toolbar">
+          <button class="clear-button" id="clear-purchased" type="button">Clear Purchased Items</button>
+        </div>
+
+        <div class="shopping-list" id="shopping-list" aria-live="polite"></div>
+        <div class="empty-state shopping-empty" id="shopping-empty">
+          <span class="empty-icon" aria-hidden="true">✓</span>
+          <h3>Your shopping list is empty.</h3>
+          <p>Add the essentials you need for the next trip.</p>
+        </div>
+      </section>
+    </div>
+
+    <footer class="app-footer">
+      <span class="footer-summary" id="task-summary">0 tasks remaining • 0 completed</span>
+      <span class="footer-summary" id="shopping-summary" hidden>0 items remaining • 0 purchased</span>
+      <span class="saved-status"><span class="status-dot" aria-hidden="true"></span> Saved locally</span>
+    </footer>
+  </main>
+
+  <div class="modal-overlay" id="confirm-modal" aria-hidden="true" hidden>
+    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="confirm-title" aria-describedby="confirm-message">
+      <div class="modal-icon" aria-hidden="true">!</div>
+      <h3 id="confirm-title">Confirm Deletion</h3>
+      <p id="confirm-message">Are you sure you want to delete this item? This action cannot be undone.</p>
+      <div class="modal-actions">
+        <button class="modal-button modal-button-secondary" id="confirm-cancel" type="button">Cancel</button>
+        <button class="modal-button modal-button-danger" id="confirm-delete" type="button">Delete</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="network-status" id="network-status" role="status" aria-live="polite" hidden>
+    <span class="loading-spinner" aria-hidden="true"></span>
+    <span id="network-status-text">Loading your plans...</span>
+  </div>
+</body>
+</html>
