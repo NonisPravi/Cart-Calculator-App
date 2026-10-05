@@ -1,584 +1,647 @@
-const SUPABASE_URL = "https://febcvclmvpoogtomlxaz.supabase.co";
-const SUPABASE_ANON_KEY = "sb_publishable_-28vyy1G2uT9x98vgIsHLA_fhqly00G";
+// supabase project password : L38sW3NcSmIvyV7s
+
+const SUPABASE_URL = "https://rakvlbrcolswkwrvgrja.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJha3ZsYnJjb2xzd2t3cnZncmphIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTExODY4MzgsImV4cCI6MjEwNjc2MjgzOH0.fNyqGldGEoxZt0JqLjvkfotHNHXd2_QlWwKGL2Q2mv4";
+
 const supabaseLibrary = window.supabase;
 const supabaseClient = supabaseLibrary?.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) || null;
 
-const authScreen = document.querySelector("#auth-screen");
-const appShell = document.querySelector("#app-shell");
-const authForm = document.querySelector("#auth-form");
-const authEmail = document.querySelector("#auth-email");
-const authPassword = document.querySelector("#auth-password");
-const authSubmit = document.querySelector("#auth-submit");
-const authToggle = document.querySelector("#auth-toggle");
-const authKicker = document.querySelector("#auth-kicker");
-const authTitle = document.querySelector("#auth-title");
-const authCopy = document.querySelector("#auth-copy");
-const authFeedback = document.querySelector("#auth-feedback");
-const accountEmail = document.querySelector("#account-email");
-const logoutButton = document.querySelector("#logout-button");
-const networkStatus = document.querySelector("#network-status");
-const networkStatusText = document.querySelector("#network-status-text");
-const taskForm = document.querySelector("#task-form");
-const taskInput = document.querySelector("#task-input");
-const taskAddButton = document.querySelector("#task-add-button");
-const taskList = document.querySelector("#task-list");
-const emptyState = document.querySelector("#empty-state");
-const emptyTitle = document.querySelector("#empty-title");
-const emptyCopy = document.querySelector("#empty-copy");
-const clearCompletedButton = document.querySelector("#clear-completed");
-const progressNumber = document.querySelector("#progress-number");
-const taskSummary = document.querySelector("#task-summary");
-const shoppingSummary = document.querySelector("#shopping-summary");
-const dateDisplay = document.querySelector("#date-display");
-const selectedDateLabel = document.querySelector("#selected-date-label");
-const dateNavLabel = document.querySelector("#date-nav-label");
-const datePicker = document.querySelector("#date-picker");
-const prevDateButton = document.querySelector("#prev-date");
-const nextDateButton = document.querySelector("#next-date");
-const todayDateButton = document.querySelector("#today-date");
-const pastDateMessage = document.querySelector("#past-date-message");
+
+const $ = (selector) => document.querySelector(selector);
+const authScreen = $("#auth-screen");
+const appShell = $("#app-shell");
+const authForm = $("#auth-form");
+const authEmail = $("#auth-email");
+const authPassword = $("#auth-password");
+const authSubmit = $("#auth-submit");
+const authToggle = $("#auth-toggle");
+const authKicker = $("#auth-kicker");
+const authTitle = $("#auth-title");
+const authCopy = $("#auth-copy");
+const authFeedback = $("#auth-feedback");
+const accountEmail = $("#account-email");
+const networkStatus = $("#network-status");
+const networkStatusText = $("#network-status-text");
+const shoppingForm = $("#shopping-form");
+const shoppingName = $("#shopping-name");
+const shoppingQuantity = $("#shopping-quantity");
+const shoppingList = $("#shopping-list");
+const shoppingEmpty = $("#shopping-empty");
 const filterButtons = document.querySelectorAll("[data-filter]");
-const modeButtons = document.querySelectorAll(".mode-button");
-const panelViews = document.querySelectorAll(".panel-view");
-const shoppingForm = document.querySelector("#shopping-form");
-const shoppingNameInput = document.querySelector("#shopping-name");
-const shoppingQuantityInput = document.querySelector("#shopping-quantity");
-const shoppingCategoryInput = document.querySelector("#shopping-category");
-const shoppingAddButton = document.querySelector("#shopping-add-button");
-const shoppingList = document.querySelector("#shopping-list");
-const shoppingEmpty = document.querySelector("#shopping-empty");
-const clearPurchasedButton = document.querySelector("#clear-purchased");
-const shoppingFilterButtons = document.querySelectorAll("[data-shopping-filter]");
-const shoppingCategoryFilter = document.querySelector("#shopping-category-filter");
-const confirmModal = document.querySelector("#confirm-modal");
-const confirmMessage = document.querySelector("#confirm-message");
-const confirmCancelButton = document.querySelector("#confirm-cancel");
-const confirmDeleteButton = document.querySelector("#confirm-delete");
+const viewButtons = document.querySelectorAll("[data-view]");
+const billCreateForm = $("#bill-create-form");
+const newBillTitle = $("#new-bill-title");
+const billList = $("#bill-list");
+const billEmpty = $("#bill-empty");
+const billContent = $("#bill-content");
+const billDetailEmpty = $("#bill-detail-empty");
+const recordModal = $("#record-modal");
+const recordForm = $("#record-form");
+const targetBill = $("#target-bill");
+const modalNewBillWrap = $("#modal-new-bill-wrap");
+const modalNewBill = $("#modal-new-bill");
+const actualQty = $("#actual-qty");
+const qtyUnit = $("#qty-unit");
+const unitRate = $("#unit-rate");
+const priceBasis = $("#price-basis");
+const discountValue = $("#discount-value");
+const subtotalPreview = $("#subtotal-preview");
+const recordError = $("#record-error");
+const editModal = $("#edit-item-modal");
+const editForm = $("#edit-item-form");
+const editName = $("#edit-item-name");
+const editQty = $("#edit-item-qty");
+const confirmModal = $("#confirm-modal");
+const confirmMessage = $("#confirm-message");
 
 let currentUser = null;
-let tasks = [];
-let shoppingItems = [];
-let currentFilter = "all";
-let shoppingCurrentFilter = "all";
-let shoppingCurrentCategory = "all";
-let currentMode = "daily";
-let selectedDate = getTodayISO();
 let authMode = "signin";
+let currentView = "shopping";
+let currentFilter = "all";
+let shoppingItems = [];
+let bills = [];
+let billItems = [];
+let selectedBillId = null;
+let pendingShoppingItem = null;
+let editingShoppingItem = null;
+let confirmAction = null;
+let networkTimer = null;
 
-function getTodayISO() {
-  return toISODate(new Date());
+function formatMoney(value) {
+  return `LKR ${Number(value || 0).toLocaleString("en-LK", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 
-function toISODate(dateObject) {
-  const year = dateObject.getFullYear();
-  const month = String(dateObject.getMonth() + 1).padStart(2, "0");
-  const day = String(dateObject.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
-}
-
-function normalizeDateKey(dateKey) {
-  return /^\d{4}-\d{2}-\d{2}$/.test(dateKey || "") ? dateKey : getTodayISO();
-}
-
-function isPastDate(dateKey) {
-  return normalizeDateKey(dateKey) < getTodayISO();
-}
-
-function formatFullDate(dateKey) {
-  const date = new Date(`${dateKey}T12:00:00`);
-  return Number.isNaN(date.getTime()) ? "Today" : new Intl.DateTimeFormat("en-US", {
-    weekday: "long", month: "short", day: "numeric", year: "numeric"
-  }).format(date);
-}
-
-function formatDateLabel(dateKey) {
-  return dateKey === getTodayISO() ? "Today" : formatFullDate(dateKey);
-}
-
-function updateLiveDateTime() {
-  dateDisplay.textContent = new Intl.DateTimeFormat("en-US", {
-    hour: "numeric", minute: "2-digit"
-  }).format(new Date());
-}
-
-function showNetworkStatus(message) {
+function showStatus(message, persistent = false) {
   networkStatusText.textContent = message;
   networkStatus.hidden = false;
+  window.clearTimeout(networkTimer);
+  if (!persistent) networkTimer = window.setTimeout(() => { networkStatus.hidden = true; }, 3500);
 }
 
-function hideNetworkStatus() {
-  networkStatus.hidden = true;
+function setSaveStatus(message) {
+  $("#save-status").textContent = message;
 }
 
-function showAuthFeedback(message, isError = true) {
-  authFeedback.textContent = message;
-  authFeedback.classList.toggle("is-error", isError);
-  authFeedback.classList.toggle("is-success", !isError);
-}
-
-function getAuthErrorMessage(error) {
-  if (!error) return "Something went wrong. Please try again.";
-  if (error.message) return error.message;
-  return "Authentication failed. Please check your details and try again.";
+function handleError(error, context = "Could not save your changes.") {
+  console.error(context, error);
+  showStatus(error?.message || context);
 }
 
 function setAuthenticatedView(user) {
   currentUser = user;
-  const isAuthenticated = Boolean(user);
-  authScreen.hidden = isAuthenticated;
-  appShell.hidden = !isAuthenticated;
+  authScreen.hidden = Boolean(user);
+  appShell.hidden = !user;
   accountEmail.textContent = user?.email || "";
-  if (!isAuthenticated) {
-    tasks = [];
+  if (!user) {
     shoppingItems = [];
-    taskList.innerHTML = "";
-    shoppingList.innerHTML = "";
+    bills = [];
+    billItems = [];
+    selectedBillId = null;
+    renderAll();
   }
 }
 
-function applyPastDateState() {
-  const shouldDisable = isPastDate(selectedDate);
-  [taskInput, taskAddButton, shoppingNameInput, shoppingQuantityInput, shoppingCategoryInput, shoppingAddButton]
-    .forEach((element) => { element.disabled = shouldDisable; });
-  pastDateMessage.hidden = !shouldDisable;
+function showModal(modal) {
+  modal.hidden = false;
+  modal.setAttribute("aria-hidden", "false");
+  document.body.classList.add("modal-open");
 }
 
-function renderDateHeader() {
-  selectedDateLabel.textContent = formatDateLabel(selectedDate);
-  dateNavLabel.textContent = formatFullDate(selectedDate);
-  datePicker.value = selectedDate;
-  document.title = `Daymark | ${formatFullDate(selectedDate)}`;
-  applyPastDateState();
+function hideModal(modal) {
+  modal.hidden = true;
+  modal.setAttribute("aria-hidden", "true");
+  if (![recordModal, editModal, confirmModal].some((element) => !element.hidden)) document.body.classList.remove("modal-open");
 }
 
-function getVisibleTasks() {
-  if (currentFilter === "active") return tasks.filter((task) => !task.is_completed);
-  if (currentFilter === "completed") return tasks.filter((task) => task.is_completed);
-  return tasks;
+function closeRecordModal() {
+  hideModal(recordModal);
+  pendingShoppingItem = null;
+  recordError.textContent = "";
+  recordForm.reset();
+  updateSubtotal();
+  renderShopping();
 }
 
-function renderSummary() {
-  const completedTaskCount = tasks.filter((task) => task.is_completed).length;
-  const purchasedCount = shoppingItems.filter((item) => item.is_purchased).length;
-  const remainingTasks = tasks.length - completedTaskCount;
-  const remainingItems = shoppingItems.length - purchasedCount;
-  taskSummary.textContent = `${remainingTasks} ${remainingTasks === 1 ? "task" : "tasks"} remaining • ${completedTaskCount} completed`;
-  shoppingSummary.textContent = `${remainingItems} ${remainingItems === 1 ? "item" : "items"} remaining • ${purchasedCount} purchased`;
-  taskSummary.hidden = currentMode !== "daily";
-  shoppingSummary.hidden = currentMode !== "shopping";
+function getVisibleShoppingItems() {
+  if (currentFilter === "pending") return shoppingItems.filter((item) => !item.is_marked);
+  if (currentFilter === "marked") return shoppingItems.filter((item) => item.is_marked);
+  return shoppingItems;
 }
 
-function renderTasks() {
-  const visibleTasks = getVisibleTasks();
-  const completedCount = tasks.filter((task) => task.is_completed).length;
-  const activeCount = tasks.length - completedCount;
-  const completion = tasks.length === 0 ? 0 : Math.round((completedCount / tasks.length) * 100);
-  taskList.innerHTML = "";
-  visibleTasks.forEach((task) => taskList.appendChild(renderTask(task)));
-  document.querySelector("#all-count").textContent = tasks.length;
-  document.querySelector("#active-count").textContent = activeCount;
-  document.querySelector("#completed-count").textContent = completedCount;
-  progressNumber.textContent = `${completion}%`;
-  clearCompletedButton.hidden = completedCount === 0;
-  if (tasks.length === 0) {
-    emptyTitle.textContent = "Your list is clear.";
-    emptyCopy.textContent = "Add a task above and give your day a starting point.";
-    emptyState.hidden = false;
-  } else if (visibleTasks.length === 0) {
-    emptyTitle.textContent = currentFilter === "completed" ? "Nothing finished yet." : "You are all caught up.";
-    emptyCopy.textContent = currentFilter === "completed" ? "Completed tasks will show up here." : "A clear list is a powerful place to be.";
-    emptyState.hidden = false;
-  } else {
-    emptyState.hidden = true;
-  }
-}
-
-function renderShoppingList() {
-  let visibleItems = shoppingItems;
-  if (shoppingCurrentFilter === "pending") visibleItems = visibleItems.filter((item) => !item.is_purchased);
-  if (shoppingCurrentFilter === "purchased") visibleItems = visibleItems.filter((item) => item.is_purchased);
-  if (shoppingCurrentCategory !== "all") visibleItems = visibleItems.filter((item) => item.category === shoppingCurrentCategory);
-  const purchasedCount = shoppingItems.filter((item) => item.is_purchased).length;
-  shoppingList.innerHTML = "";
-  visibleItems.forEach((item) => shoppingList.appendChild(renderShoppingItem(item)));
-  clearPurchasedButton.hidden = purchasedCount === 0;
+function renderShopping() {
+  const visibleItems = getVisibleShoppingItems();
+  shoppingList.replaceChildren();
+  visibleItems.forEach((item) => shoppingList.append(renderShoppingItem(item)));
   shoppingEmpty.hidden = visibleItems.length > 0;
-  if (visibleItems.length === 0 && shoppingItems.length > 0) {
-    shoppingEmpty.querySelector("h3").textContent = "No matching items.";
-    shoppingEmpty.querySelector("p").textContent = "Try another category or status filter.";
-  } else {
-    shoppingEmpty.querySelector("h3").textContent = "Your shopping list is empty.";
-    shoppingEmpty.querySelector("p").textContent = "Add the essentials you need for the next trip.";
-  }
-}
-
-function render() {
-  renderTasks();
-  renderShoppingList();
-  renderSummary();
-  renderDateHeader();
-}
-
-function renderTask(task) {
-  const item = document.createElement("article");
-  item.className = `task-item${task.is_completed ? " is-complete" : ""}`;
-  const checkButton = document.createElement("button");
-  checkButton.className = "task-check";
-  checkButton.type = "button";
-  checkButton.setAttribute("aria-label", task.is_completed ? `Mark ${task.title} as active` : `Complete ${task.title}`);
-  checkButton.textContent = "✓";
-  checkButton.addEventListener("click", () => toggleTask(task));
-  const text = document.createElement("span");
-  text.className = "task-text";
-  text.textContent = task.title;
-  const deleteButton = document.createElement("button");
-  deleteButton.className = "delete-task";
-  deleteButton.type = "button";
-  deleteButton.setAttribute("aria-label", `Delete ${task.title}`);
-  deleteButton.textContent = "×";
-  deleteButton.addEventListener("click", () => deleteTask(task));
-  item.append(checkButton, text, deleteButton);
-  return item;
+  $("#shopping-count").textContent = `${shoppingItems.filter((item) => !item.is_marked).length} to buy`;
+  $("#list-hint").textContent = `${shoppingItems.filter((item) => item.is_marked).length} recorded`;
+  shoppingEmpty.querySelector("h3").textContent = shoppingItems.length && !visibleItems.length ? "Nothing in this view" : "Your list starts here";
+  shoppingEmpty.querySelector("p").textContent = shoppingItems.length && !visibleItems.length ? "Choose another filter to see your items." : "Add the items you want to pick up.";
 }
 
 function renderShoppingItem(item) {
-  const card = document.createElement("article");
-  card.className = `shopping-item${item.is_purchased ? " is-purchased" : ""}`;
-  const checkbox = document.createElement("input");
-  checkbox.type = "checkbox";
-  checkbox.checked = item.is_purchased;
-  checkbox.className = "shopping-check";
-  checkbox.setAttribute("aria-label", `Mark ${item.item_name} as purchased`);
-  checkbox.addEventListener("change", () => toggleShoppingItem(item));
-  const content = document.createElement("div");
-  content.className = "shopping-copy";
-  const name = document.createElement("div");
+  const row = document.createElement("article");
+  row.className = `shopping-item${item.is_marked ? " is-marked" : ""}`;
+  const check = document.createElement("input");
+  check.type = "checkbox";
+  check.className = "shopping-check";
+  check.checked = item.is_marked;
+  check.disabled = item.is_marked;
+  check.setAttribute("aria-label", item.is_marked ? `${item.name} added to a bill` : `Record ${item.name} to a bill`);
+  check.addEventListener("change", () => openRecordModal(item));
+  const copy = document.createElement("div");
+  copy.className = "shopping-copy";
+  const name = document.createElement("span");
   name.className = "shopping-name";
-  name.textContent = item.item_name;
+  name.textContent = item.name;
   const meta = document.createElement("span");
   meta.className = "shopping-meta";
-  meta.innerHTML = `<span>${item.quantity || "Qty not set"}</span><span class="category-tag">${item.category}</span>`;
-  const deleteButton = document.createElement("button");
-  deleteButton.className = "shopping-delete";
-  deleteButton.type = "button";
-  deleteButton.setAttribute("aria-label", `Delete ${item.item_name}`);
-  deleteButton.textContent = "×";
-  deleteButton.addEventListener("click", () => deleteShoppingItem(item));
-  content.append(name, meta);
-  card.append(checkbox, content, deleteButton);
-  return card;
+  meta.textContent = item.is_marked ? `Added to bill${item.planned_qty ? ` · Planned: ${item.planned_qty}` : ""}` : (item.planned_qty || "Tap the check when bought");
+  copy.append(name, meta);
+  const actions = document.createElement("div");
+  actions.className = "item-actions";
+  const edit = makeIconButton("✎", `Edit ${item.name}`, () => openEditModal(item));
+  const remove = makeIconButton("×", `Delete ${item.name}`, () => confirmDeleteShopping(item));
+  actions.append(edit, remove);
+  row.append(check, copy, actions);
+  return row;
 }
 
-async function fetchData() {
-  if (!currentUser) return;
-  showNetworkStatus("Loading your plans...");
-  const [tasksResult, shoppingResult] = await Promise.all([
-    supabaseClient.from("tasks").select("id, title, task_date, is_completed").eq("task_date", selectedDate).eq("user_id", currentUser.id),
-    supabaseClient.from("shopping_items").select("id, item_name, quantity, category, item_date, is_purchased").eq("item_date", selectedDate).eq("user_id", currentUser.id)
+function makeIconButton(text, label, onClick) {
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = "icon-button";
+  button.textContent = text;
+  button.setAttribute("aria-label", label);
+  button.title = label;
+  button.addEventListener("click", onClick);
+  return button;
+}
+
+function billTotals(items) {
+  return items.reduce((totals, item) => {
+    const basisAmounts = { "per 1kg": 1000, "per 100g": 100, "per 1g": 1, "per 1l": 1000, "per 100ml": 100, "per 1ml": 1, "per item/pack": 1 };
+    const basisDimension = item.unit_price_base.includes("kg") || item.unit_price_base.includes("g") ? "g" : item.unit_price_base.includes("l") ? "ml" : "each";
+    const actual = unitQuantity(Number(item.actual_qty), item.qty_unit);
+    const gross = actual.dimension === basisDimension
+      ? Math.round(Number(item.unit_price_rate) * actual.amount / basisAmounts[item.unit_price_base] * 100) / 100
+      : Number(item.final_item_price);
+    totals.gross += gross;
+    totals.discount += Math.max(0, gross - Number(item.final_item_price || 0));
+    totals.net += Number(item.final_item_price || 0);
+    return totals;
+  }, { gross: 0, discount: 0, net: 0 });
+}
+
+function formatDiscount(item) {
+  const applied = billTotals([item]).discount;
+  return item.discount_type === "%"
+    ? `${Number(item.discount_value)}% (${formatMoney(applied)})`
+    : formatMoney(applied);
+}
+
+function renderBills() {
+  billList.replaceChildren();
+  bills.forEach((bill) => {
+    const choice = document.createElement("button");
+    choice.type = "button";
+    choice.className = `bill-choice${bill.id === selectedBillId ? " is-active" : ""}`;
+    choice.setAttribute("aria-pressed", String(bill.id === selectedBillId));
+    const title = document.createElement("span");
+    title.className = "bill-choice-name";
+    title.textContent = bill.title;
+    const total = document.createElement("span");
+    total.className = "bill-choice-total";
+    total.textContent = formatMoney(billTotals(bill.id === selectedBillId ? billItems : bill.items || []).net);
+    choice.append(title, total);
+    choice.addEventListener("click", () => selectBill(bill.id));
+    billList.append(choice);
+  });
+  billEmpty.hidden = bills.length > 0;
+  $("#bill-count").textContent = String(bills.length);
+  $("#open-bill-count").textContent = String(bills.filter((bill) => bill.status === "open").length);
+  const selected = bills.find((bill) => bill.id === selectedBillId);
+  billContent.hidden = !selected;
+  billDetailEmpty.hidden = Boolean(selected);
+  if (!selected) return;
+  $("#bill-title").textContent = selected.title;
+  $("#bill-status-label").textContent = selected.status === "open" ? "Open bill" : "Completed bill";
+  $("#bill-date").textContent = `Started ${new Intl.DateTimeFormat("en-LK", { dateStyle: "medium", timeStyle: "short" }).format(new Date(selected.created_at))}`;
+  renderBillItems();
+}
+
+function renderBillItems() {
+  const body = $("#bill-items-body");
+  body.replaceChildren();
+  billItems.forEach((item) => {
+    const row = document.createElement("tr");
+    const discountLabel = formatDiscount(item);
+    const values = [item.item_name, `${item.actual_qty} ${item.qty_unit}`, `${formatMoney(item.unit_price_rate)} ${item.unit_price_base}`, discountLabel, formatMoney(item.final_item_price)];
+    values.forEach((value, index) => {
+      const cell = document.createElement("td");
+      cell.textContent = value;
+      cell.dataset.label = ["Item", "Quantity", "Rate", "Discount", "Net (LKR)"][index];
+      if (index === 4) cell.className = "number-cell";
+      row.append(cell);
+    });
+    body.append(row);
+  });
+  $("#bill-items-empty").hidden = billItems.length > 0;
+  const totals = billTotals(billItems);
+  $("#bill-gross").textContent = formatMoney(totals.gross);
+  $("#bill-discounts").textContent = `− ${formatMoney(totals.discount)}`;
+  $("#bill-net").textContent = formatMoney(totals.net);
+}
+
+function renderAll() {
+  renderShopping();
+  renderBills();
+}
+
+async function loadData() {
+  if (!currentUser || !supabaseClient) return;
+  showStatus("Loading your shopping and bills…", true);
+  const [shoppingResult, billResult, billItemsResult] = await Promise.all([
+    supabaseClient.from("shopping_items").select("id, user_id, name, planned_qty, is_marked, marked_at").eq("user_id", currentUser.id).order("created_at", { ascending: true }),
+    supabaseClient.from("bills").select("id, user_id, title, status, created_at").eq("user_id", currentUser.id).order("created_at", { ascending: false }),
+    supabaseClient.from("bill_items").select("id, bill_id, user_id, item_name, actual_qty, qty_unit, unit_price_rate, unit_price_base, discount_value, discount_type, final_item_price, created_at").eq("user_id", currentUser.id)
   ]);
-  if (tasksResult.error) throw tasksResult.error;
   if (shoppingResult.error) throw shoppingResult.error;
-  tasks = tasksResult.data || [];
+  if (billResult.error) throw billResult.error;
+  if (billItemsResult.error) throw billItemsResult.error;
   shoppingItems = shoppingResult.data || [];
-  render();
-  hideNetworkStatus();
+  bills = (billResult.data || []).map((bill) => ({ ...bill, items: (billItemsResult.data || []).filter((item) => item.bill_id === bill.id) }));
+  if (!bills.some((bill) => bill.id === selectedBillId)) selectedBillId = bills[0]?.id || null;
+  await loadSelectedBillItems();
+  renderAll();
+  networkStatus.hidden = true;
+  setSaveStatus("Synced to your account");
 }
 
-async function runDataAction(action) {
-  showNetworkStatus("Saving changes...");
+async function loadSelectedBillItems() {
+  if (!selectedBillId) { billItems = []; return; }
+  const { data, error } = await supabaseClient.from("bill_items").select("id, bill_id, user_id, item_name, actual_qty, qty_unit, unit_price_rate, unit_price_base, discount_value, discount_type, final_item_price, created_at").eq("bill_id", selectedBillId).eq("user_id", currentUser.id).order("created_at", { ascending: true });
+  if (error) throw error;
+  billItems = data || [];
+}
+
+async function runAction(action, successMessage = "Synced to your account") {
+  setSaveStatus("Saving…");
   try {
     await action();
-    await fetchData();
+    await loadData();
+    setSaveStatus(successMessage);
   } catch (error) {
-    showNetworkStatus(error.message || "Could not save your changes.");
+    setSaveStatus("Sync issue");
+    handleError(error);
   }
 }
 
-function closeConfirmationModal() {
-  confirmModal.classList.remove("is-visible");
-  confirmModal.hidden = true;
-  confirmModal.setAttribute("aria-hidden", "true");
-  confirmDeleteButton.onclick = null;
-  confirmCancelButton.onclick = null;
-  confirmModal.onclick = null;
-}
-
-function showConfirmationDialog(message) {
-  return new Promise((resolve) => {
-    confirmMessage.textContent = message;
-    confirmModal.hidden = false;
-    confirmModal.classList.add("is-visible");
-    confirmModal.setAttribute("aria-hidden", "false");
-    const finish = (confirmed) => {
-      closeConfirmationModal();
-      document.removeEventListener("keydown", handleEscape);
-      resolve(confirmed);
-    };
-    const handleEscape = (event) => { if (event.key === "Escape") finish(false); };
-    document.addEventListener("keydown", handleEscape);
-    confirmDeleteButton.onclick = () => finish(true);
-    confirmCancelButton.onclick = () => finish(false);
-    confirmModal.onclick = (event) => { if (event.target === confirmModal) finish(false); };
-  });
-}
-
-async function addTask(event) {
-  event.preventDefault();
-  if (isPastDate(selectedDate)) return;
-  const title = taskInput.value.trim();
-  if (!title) return;
-  await runDataAction(async () => {
-    const { error } = await supabaseClient.from("tasks").insert({ title, task_date: selectedDate, is_completed: false, user_id: currentUser.id });
-    if (error) throw error;
-  });
-  taskForm.reset();
-  taskInput.focus();
-}
-
-async function toggleTask(task) {
-  await runDataAction(async () => {
-    const { error } = await supabaseClient.from("tasks").update({ is_completed: !task.is_completed }).eq("id", task.id).eq("user_id", currentUser.id);
-    if (error) throw error;
-  });
-}
-
-async function deleteTask(task) {
-  if (!await showConfirmationDialog(`Are you sure you want to delete "${task.title}"? This action cannot be undone.`)) return;
-  await runDataAction(async () => {
-    const { error } = await supabaseClient.from("tasks").delete().eq("id", task.id).eq("user_id", currentUser.id);
-    if (error) throw error;
-  });
-}
-
-async function clearCompleted() {
-  if (!await showConfirmationDialog("Are you sure you want to clear completed tasks? This action cannot be undone.")) return;
-  await runDataAction(async () => {
-    const { error } = await supabaseClient.from("tasks").delete().eq("task_date", selectedDate).eq("user_id", currentUser.id).eq("is_completed", true);
-    if (error) throw error;
-  });
+async function createBill(title) {
+  const cleanTitle = title.trim();
+  if (!cleanTitle) throw new Error("Enter a name for the bill.");
+  const { data, error } = await supabaseClient.from("bills").insert({ title: cleanTitle, user_id: currentUser.id }).select("id").single();
+  if (error) throw error;
+  selectedBillId = data.id;
+  return data.id;
 }
 
 async function addShoppingItem(event) {
   event.preventDefault();
-  if (isPastDate(selectedDate)) return;
-  const itemName = shoppingNameInput.value.trim();
-  if (!itemName) return;
-  await runDataAction(async () => {
-    const { error } = await supabaseClient.from("shopping_items").insert({ item_name: itemName, quantity: shoppingQuantityInput.value.trim(), category: shoppingCategoryInput.value || "Groceries", item_date: selectedDate, is_purchased: false, user_id: currentUser.id });
+  const name = shoppingName.value.trim();
+  if (!name) return;
+  await runAction(async () => {
+    const { error } = await supabaseClient.from("shopping_items").insert({ user_id: currentUser.id, name, planned_qty: shoppingQuantity.value.trim() || null });
     if (error) throw error;
   });
   shoppingForm.reset();
-  shoppingNameInput.focus();
+  shoppingName.focus();
 }
 
-async function toggleShoppingItem(item) {
-  await runDataAction(async () => {
-    const { error } = await supabaseClient.from("shopping_items").update({ is_purchased: !item.is_purchased }).eq("id", item.id).eq("user_id", currentUser.id);
-    if (error) throw error;
+function openEditModal(item) {
+  editingShoppingItem = item;
+  editName.value = item.name;
+  editQty.value = item.planned_qty || "";
+  $("#edit-item-error").textContent = "";
+  showModal(editModal);
+  editName.focus();
+}
+
+async function saveShoppingEdit(event) {
+  event.preventDefault();
+  if (!editingShoppingItem) return;
+  const name = editName.value.trim();
+  if (!name) return;
+  const { error } = await supabaseClient.from("shopping_items").update({ name, planned_qty: editQty.value.trim() || null }).eq("id", editingShoppingItem.id).eq("user_id", currentUser.id);
+  if (error) { $("#edit-item-error").textContent = error.message; return; }
+  hideModal(editModal);
+  editingShoppingItem = null;
+  await refreshAfterMutation();
+}
+
+function openRecordModal(item) {
+  pendingShoppingItem = item;
+  $("#record-item-name").textContent = item.name;
+  targetBill.replaceChildren();
+  const openBills = bills.filter((bill) => bill.status === "open");
+  openBills.forEach((bill) => {
+    const option = document.createElement("option");
+    option.value = bill.id;
+    option.textContent = bill.title;
+    targetBill.append(option);
   });
+  const create = document.createElement("option");
+  create.value = "__create__";
+  create.textContent = "+ Create new bill";
+  targetBill.append(create);
+  targetBill.value = openBills.some((bill) => bill.id === selectedBillId) ? selectedBillId : (openBills[0]?.id || "__create__");
+  modalNewBillWrap.hidden = targetBill.value !== "__create__";
+  modalNewBill.value = "";
+  actualQty.value = "1";
+  qtyUnit.value = "unit/packet";
+  unitRate.value = "";
+  discountValue.value = "0";
+  recordError.textContent = "";
+  showModal(recordModal);
+  updateSubtotal();
+  (openBills.length ? actualQty : modalNewBill).focus();
 }
 
-async function deleteShoppingItem(item) {
-  if (!await showConfirmationDialog(`Are you sure you want to delete "${item.item_name}"? This action cannot be undone.`)) return;
-  await runDataAction(async () => {
+function unitQuantity(quantity, unit) {
+  if (unit === "g") return { amount: quantity, dimension: "g" };
+  if (unit === "kg") return { amount: quantity * 1000, dimension: "g" };
+  if (unit === "ml") return { amount: quantity, dimension: "ml" };
+  if (unit === "l") return { amount: quantity * 1000, dimension: "ml" };
+  if (unit === "half") return { amount: quantity * 0.5, dimension: "each" };
+  if (unit === "full" || unit === "unit/packet") return { amount: quantity, dimension: "each" };
+  return { amount: 0, dimension: "unknown" };
+}
+
+function calculateRecord() {
+  const quantity = Number(actualQty.value);
+  const rate = Number(unitRate.value);
+  const discount = Math.max(0, Number(discountValue.value || 0));
+  if (!Number.isFinite(quantity) || quantity <= 0 || !Number.isFinite(rate) || rate < 0) return { gross: 0, discount: 0, net: 0, valid: false };
+  const [baseAmount, baseDimension] = priceBasis.value.split(":");
+  const actual = unitQuantity(quantity, qtyUnit.value);
+  if (actual.dimension !== baseDimension) return { gross: 0, discount: 0, net: 0, valid: false, mismatch: true };
+  const gross = rate * actual.amount / Number(baseAmount);
+  const discountType = recordForm.querySelector('[name="discount-type"]:checked').value;
+  const requestedDiscount = discountType === "%" ? gross * Math.min(discount, 100) / 100 : discount;
+  const appliedDiscount = Math.min(gross, requestedDiscount);
+  return { gross, discount: appliedDiscount, net: Math.max(0, gross - appliedDiscount), valid: true, discountType };
+}
+
+function updateSubtotal() {
+  const total = calculateRecord();
+  subtotalPreview.textContent = formatMoney(total.net);
+  const unitMatches = !total.mismatch;
+  unitRate.setCustomValidity(unitMatches ? "" : "Quantity and price basis must use compatible units.");
+  recordError.textContent = total.mismatch ? "Choose a price basis that matches the quantity unit." : "";
+  $("#record-save").disabled = !total.valid;
+}
+
+async function saveRecord(event) {
+  event.preventDefault();
+  if (!pendingShoppingItem) return;
+  const calculation = calculateRecord();
+  if (!calculation.valid) { updateSubtotal(); return; }
+  const billIdChoice = targetBill.value;
+  const openBills = bills.filter((bill) => bill.status === "open");
+  if (billIdChoice === "__create__" && !modalNewBill.value.trim()) {
+    recordError.textContent = "Name the new bill before saving.";
+    modalNewBill.focus();
+    return;
+  }
+  const item = pendingShoppingItem;
+  const baseLabels = { "1000:g":"per 1kg", "100:g":"per 100g", "1:g":"per 1g", "1000:ml":"per 1l", "100:ml":"per 100ml", "1:ml":"per 1ml", "1:each":"per item/pack" };
+  const basis = priceBasis.value;
+  const quantity = Number(actualQty.value);
+  const rate = Number(unitRate.value);
+  const discountType = calculation.discountType;
+  const discountStored = discountType === "%" ? Math.min(100, Number(discountValue.value || 0)) : calculation.discount;
+  $("#record-save").disabled = true;
+  recordError.textContent = "";
+  try {
+    let billId = billIdChoice;
+    if (billId === "__create__") billId = await createBill(modalNewBill.value);
+    else if (!openBills.some((bill) => bill.id === billId)) throw new Error("Choose an open bill or create a new one.");
+    const { error: insertError } = await supabaseClient.from("bill_items").insert({
+      bill_id: billId, user_id: currentUser.id, item_name: item.name, actual_qty: quantity, qty_unit: qtyUnit.value,
+      unit_price_rate: rate, unit_price_base: baseLabels[basis], discount_value: discountStored, discount_type: discountType,
+      final_item_price: Number(calculation.net.toFixed(2))
+    });
+    if (insertError) throw insertError;
+    const { error: markError } = await supabaseClient.from("shopping_items").update({ is_marked: true, marked_at: new Date().toISOString() }).eq("id", item.id).eq("user_id", currentUser.id);
+    if (markError) throw new Error(`Bill line saved, but the shopping item could not be marked: ${markError.message}`);
+    closeRecordModal();
+    await loadData();
+  } catch (error) {
+    recordError.textContent = error.message || "Could not add the item to the bill.";
+    $("#record-save").disabled = false;
+    handleError(error);
+    await loadData().catch((loadError) => console.error(loadError));
+  }
+}
+
+function showConfirm(message, action) {
+  confirmMessage.textContent = message;
+  confirmAction = action;
+  showModal(confirmModal);
+}
+
+function closeConfirm() {
+  hideModal(confirmModal);
+  confirmAction = null;
+}
+
+function confirmDeleteShopping(item) {
+  showConfirm(`Delete “${item.name}” from your shopping list?`, async () => {
     const { error } = await supabaseClient.from("shopping_items").delete().eq("id", item.id).eq("user_id", currentUser.id);
     if (error) throw error;
   });
 }
 
-async function clearPurchasedItems() {
-  if (!await showConfirmationDialog("Are you sure you want to clear purchased shopping items? This action cannot be undone.")) return;
-  await runDataAction(async () => {
-    const { error } = await supabaseClient.from("shopping_items").delete().eq("item_date", selectedDate).eq("user_id", currentUser.id).eq("is_purchased", true);
+async function selectBill(id) {
+  selectedBillId = id;
+  try { await loadSelectedBillItems(); renderBills(); }
+  catch (error) { handleError(error, "Could not load this bill."); }
+}
+
+async function createBillFromForm(event) {
+  event.preventDefault();
+  const title = newBillTitle.value.trim();
+  if (!title) return;
+  await runAction(async () => { await createBill(title); });
+  newBillTitle.value = "";
+  setView("billing");
+}
+
+async function renameBill() {
+  const bill = bills.find((entry) => entry.id === selectedBillId);
+  if (!bill) return;
+  const title = window.prompt("Rename bill", bill.title);
+  if (title === null || !title.trim()) return;
+  await runAction(async () => {
+    const { error } = await supabaseClient.from("bills").update({ title: title.trim() }).eq("id", bill.id).eq("user_id", currentUser.id);
     if (error) throw error;
   });
 }
 
-function setFilter(event) {
-  currentFilter = event.currentTarget.dataset.filter;
-  filterButtons.forEach((button) => button.classList.toggle("is-active", button === event.currentTarget));
-  renderTasks();
-  renderSummary();
-}
-
-function setShoppingFilter(event) {
-  shoppingCurrentFilter = event.currentTarget.dataset.shoppingFilter;
-  shoppingFilterButtons.forEach((button) => button.classList.toggle("is-active", button === event.currentTarget));
-  renderShoppingList();
-  renderSummary();
-}
-
-function setShoppingCategoryFilter(event) {
-  shoppingCurrentCategory = event.target.value;
-  renderShoppingList();
-}
-
-async function changeDate(offset) {
-  const date = new Date(`${selectedDate}T12:00:00`);
-  date.setDate(date.getDate() + offset);
-  selectedDate = toISODate(date);
-  await fetchData();
-}
-
-async function handleDateInput(event) {
-  selectedDate = normalizeDateKey(event.target.value);
-  await fetchData();
-}
-
-function setMode(mode) {
-  currentMode = mode;
-  modeButtons.forEach((button) => {
-    const isActive = button.dataset.mode === mode;
-    button.classList.toggle("is-active", isActive);
-    button.setAttribute("aria-selected", String(isActive));
+async function requestBillDelete() {
+  const bill = bills.find((entry) => entry.id === selectedBillId);
+  if (!bill) return;
+  showConfirm(`Delete “${bill.title}” and all its bill items? This cannot be undone.`, async () => {
+    const { error } = await supabaseClient.from("bills").delete().eq("id", bill.id).eq("user_id", currentUser.id);
+    if (error) throw error;
+    selectedBillId = null;
   });
-  panelViews.forEach((panel) => panel.classList.toggle("is-active", panel.dataset.panel === mode));
-  renderSummary();
+}
+
+async function refreshAfterMutation() {
+  closeConfirm();
+  await loadData();
+}
+
+async function runConfirmAction() {
+  if (!confirmAction) return;
+  const action = confirmAction;
+  try { await action(); await refreshAfterMutation(); }
+  catch (error) { closeConfirm(); handleError(error); }
+}
+
+function setView(view) {
+  currentView = view;
+  viewButtons.forEach((button) => {
+    const active = button.dataset.view === view;
+    button.classList.toggle("is-active", active);
+    button.setAttribute("aria-selected", String(active));
+  });
+  document.querySelectorAll(".app-view").forEach((panel) => {
+    const active = panel.dataset.panel === view;
+    panel.classList.toggle("is-active", active);
+    panel.hidden = !active;
+  });
 }
 
 function updateAuthMode() {
   const isSignIn = authMode === "signin";
-  authKicker.textContent = isSignIn ? "Welcome back" : "Start with Daymark";
-  authTitle.textContent = isSignIn ? "Make room for what matters." : "Build a calmer daily rhythm.";
-  authCopy.textContent = isSignIn ? "Sign in to keep your plans available wherever you are." : "Create an account to keep your tasks and lists in the cloud.";
+  authKicker.textContent = isSignIn ? "Welcome back" : "Join SmartCart";
+  authTitle.textContent = isSignIn ? "Ready when you are." : "Shop with a clear total.";
+  authCopy.textContent = isSignIn ? "Sign in to manage your list and live bills." : "Create an account to keep your shopping and bills in sync.";
   authSubmit.textContent = isSignIn ? "Sign in" : "Create account";
   authToggle.textContent = isSignIn ? "Need an account? Sign up" : "Already have an account? Sign in";
   authPassword.autocomplete = isSignIn ? "current-password" : "new-password";
-  authFeedback.textContent = "";
 }
+
+function authError(error) { return error?.message || "Authentication failed. Check your details and try again."; }
 
 async function handleAuthSubmit(event) {
   event.preventDefault();
-  authFeedback.textContent = "";
-  authFeedback.classList.remove("is-error", "is-success");
   const email = authEmail.value.trim();
   const password = authPassword.value;
-
-  if (!email) {
-    showAuthFeedback("Please enter your email address.");
-    authEmail.focus();
-    return;
-  }
-
-  if (password.length < 6) {
-    showAuthFeedback("Password should be at least 6 characters.");
-    authPassword.focus();
-    return;
-  }
-
-  if (!supabaseClient) {
-    showAuthFeedback("The cloud service is unavailable. Check your connection and reload.");
-    return;
-  }
+  authFeedback.classList.remove("is-error", "is-success");
+  if (!email || password.length < 6) { authFeedback.textContent = "Enter a valid email and a password of at least 6 characters."; authFeedback.classList.add("is-error"); return; }
+  if (!supabaseClient) { authFeedback.textContent = "Cloud service unavailable. Check your connection and reload."; authFeedback.classList.add("is-error"); return; }
   authSubmit.disabled = true;
-  showAuthFeedback(authMode === "signin" ? "Signing you in..." : "Creating your account...", false);
-  const credentials = { email, password };
-
+  authFeedback.textContent = authMode === "signin" ? "Signing in…" : "Creating your account…";
   try {
     if (authMode === "signin") {
-      console.log("[Auth] Signing in", { email });
-      const { data, error } = await supabaseClient.auth.signInWithPassword(credentials);
+      const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
       if (error) throw error;
-      console.log("[Auth] Sign-in succeeded", { userId: data.user?.id, hasSession: Boolean(data.session) });
-      if (data.session) await handleAuthState("SIGNED_IN", data.session);
-      return;
-    }
-
-    console.log("[Auth] Signing up", { email });
-    const { data, error } = await supabaseClient.auth.signUp(credentials);
-    if (error) throw error;
-    console.log("[Auth] Sign-up succeeded", { userId: data.user?.id, hasSession: Boolean(data.session) });
-
-    if (data.session) {
-      const { error: sessionError } = await supabaseClient.auth.setSession(data.session);
-      if (sessionError) throw sessionError;
-      console.log("[Auth] Session established after sign-up");
-      await handleAuthState("SIGNED_IN", data.session);
+      if (data.session) await handleAuthState(data.session);
     } else {
-      showAuthFeedback("Account created! Please check your email to verify before logging in.", false);
+      const { data, error } = await supabaseClient.auth.signUp({ email, password });
+      if (error) throw error;
+      if (data.session) await handleAuthState(data.session);
+      else { authFeedback.textContent = "Account created. Check your email to verify it, then sign in."; authFeedback.classList.add("is-success"); }
     }
-  } catch (error) {
-    console.error("[Auth] Authentication request failed", error);
-    showAuthFeedback(getAuthErrorMessage(error));
-  } finally {
-    authSubmit.disabled = false;
-  }
+  } catch (error) { authFeedback.textContent = authError(error); authFeedback.classList.add("is-error"); }
+  finally { authSubmit.disabled = false; }
 }
 
-async function handleAuthState(event, session) {
-  console.log("[Auth] State changed", { event, hasSession: Boolean(session), userId: session?.user?.id });
+async function handleAuthState(session) {
   setAuthenticatedView(session?.user || null);
-  if (!session?.user) {
-    hideNetworkStatus();
-    return;
-  }
-
-  try {
-    await fetchData();
-  } catch (error) {
-    console.error("[Auth] Dashboard load failed", error);
-    showNetworkStatus(getAuthErrorMessage(error));
-  }
+  if (!session?.user) return;
+  try { await loadData(); }
+  catch (error) { handleError(error, "Could not load your account data. Run the supplied Supabase SQL setup."); }
 }
 
-filterButtons.forEach((button) => button.addEventListener("click", setFilter));
-shoppingFilterButtons.forEach((button) => button.addEventListener("click", setShoppingFilter));
-shoppingCategoryFilter.addEventListener("change", setShoppingCategoryFilter);
-prevDateButton.addEventListener("click", () => changeDate(-1));
-nextDateButton.addEventListener("click", () => changeDate(1));
-todayDateButton.addEventListener("click", async () => { selectedDate = getTodayISO(); await fetchData(); });
-datePicker.addEventListener("change", handleDateInput);
-taskForm.addEventListener("submit", addTask);
-clearCompletedButton.addEventListener("click", clearCompleted);
-modeButtons.forEach((button) => button.addEventListener("click", () => setMode(button.dataset.mode)));
-shoppingForm.addEventListener("submit", addShoppingItem);
-clearPurchasedButton.addEventListener("click", clearPurchasedItems);
+function exportBillPdf() {
+  const bill = bills.find((entry) => entry.id === selectedBillId);
+  if (!bill || !window.jspdf?.jsPDF) { showStatus("PDF export library is unavailable. Reload and try again."); return; }
+  const doc = new window.jspdf.jsPDF({ unit: "mm", format: "a4" });
+  const totals = billTotals(billItems);
+  const createdAt = new Intl.DateTimeFormat("en-LK", { dateStyle: "full", timeStyle: "short" }).format(new Date(bill.created_at));
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(20);
+  doc.text("SmartCart & Bill", 14, 18);
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(10);
+  doc.text(`Bill: ${bill.title}`, 14, 27);
+  doc.text(`Date: ${createdAt}`, 14, 33);
+  doc.autoTable({ startY: 41, head: [["Item", "Qty", "Rate / basis", "Discount", "Net (LKR)"]], body: billItems.map((item) => [item.item_name, `${item.actual_qty} ${item.qty_unit}`, `${formatMoney(item.unit_price_rate)} ${item.unit_price_base}`, formatDiscount(item), formatMoney(item.final_item_price)]), styles: { fontSize: 8, cellPadding: 3 }, headStyles: { fillColor: [27, 89, 73] }, columnStyles: { 4: { halign: "right" } } });
+  const summaryY = (doc.lastAutoTable?.finalY || 41) + 10;
+  doc.setFontSize(10);
+  doc.text(`Gross amount: ${formatMoney(totals.gross)}`, 196, summaryY, { align: "right" });
+  doc.text(`Total discounts: ${formatMoney(totals.discount)}`, 196, summaryY + 7, { align: "right" });
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(13);
+  doc.text(`Grand total: ${formatMoney(totals.net)}`, 196, summaryY + 17, { align: "right" });
+  doc.save(`${bill.title.replace(/[^a-z0-9_-]+/gi, "-").replace(/^-|-$/g, "") || "bill"}.pdf`);
+}
 
-function initializeAuth() {
+function bindEvents() {
   authForm.addEventListener("submit", handleAuthSubmit);
-  authToggle.addEventListener("click", () => {
-    authMode = authMode === "signin" ? "signup" : "signin";
-    updateAuthMode();
+  authToggle.addEventListener("click", () => { authMode = authMode === "signin" ? "signup" : "signin"; updateAuthMode(); });
+  $("#logout-button").addEventListener("click", async () => { const { error } = await supabaseClient.auth.signOut(); if (error) handleError(error); });
+  shoppingForm.addEventListener("submit", addShoppingItem);
+  filterButtons.forEach((button) => button.addEventListener("click", () => {
+    currentFilter = button.dataset.filter;
+    filterButtons.forEach((entry) => entry.classList.toggle("is-active", entry === button));
+    renderShopping();
+  }));
+  viewButtons.forEach((button) => button.addEventListener("click", () => setView(button.dataset.view)));
+  billCreateForm.addEventListener("submit", createBillFromForm);
+  $("#record-close").addEventListener("click", closeRecordModal);
+  $("#record-cancel").addEventListener("click", closeRecordModal);
+  recordModal.addEventListener("click", (event) => { if (event.target === recordModal) closeRecordModal(); });
+  targetBill.addEventListener("change", () => { modalNewBillWrap.hidden = targetBill.value !== "__create__"; if (!modalNewBillWrap.hidden) modalNewBill.focus(); });
+  recordForm.addEventListener("input", updateSubtotal);
+  recordForm.addEventListener("change", updateSubtotal);
+  recordForm.addEventListener("submit", saveRecord);
+  editForm.addEventListener("submit", saveShoppingEdit);
+  $("#edit-item-close").addEventListener("click", () => hideModal(editModal));
+  $("#edit-item-cancel").addEventListener("click", () => hideModal(editModal));
+  editModal.addEventListener("click", (event) => { if (event.target === editModal) hideModal(editModal); });
+  $("#rename-bill-button").addEventListener("click", renameBill);
+  $("#delete-bill-button").addEventListener("click", requestBillDelete);
+  $("#download-pdf").addEventListener("click", exportBillPdf);
+  $("#confirm-close").addEventListener("click", closeConfirm);
+  $("#confirm-cancel").addEventListener("click", closeConfirm);
+  $("#confirm-delete").addEventListener("click", runConfirmAction);
+  confirmModal.addEventListener("click", (event) => { if (event.target === confirmModal) closeConfirm(); });
+  $("#status-dismiss").addEventListener("click", () => { networkStatus.hidden = true; });
+  document.addEventListener("keydown", (event) => {
+    if (event.key !== "Escape") return;
+    if (!recordModal.hidden) closeRecordModal();
+    else if (!editModal.hidden) hideModal(editModal);
+    else if (!confirmModal.hidden) closeConfirm();
   });
-  logoutButton.addEventListener("click", async () => {
-    if (!supabaseClient) return;
-    console.log("[Auth] Signing out", { userId: currentUser?.id });
-    const { error } = await supabaseClient.auth.signOut();
-    if (error) console.error("[Auth] Sign-out failed", error);
-  });
-
-  if (supabaseClient) {
-    supabaseClient.auth.onAuthStateChange((event, session) => {
-      console.log("[Auth] onAuthStateChange event", event, { hasSession: Boolean(session) });
-      if (["INITIAL_SESSION", "SIGNED_IN", "SIGNED_OUT"].includes(event)) {
-        handleAuthState(event, session);
-      }
-    });
-    supabaseClient.auth.getSession().then(({ data, error }) => {
-      if (error) {
-        console.error("[Auth] Initial session lookup failed", error);
-        showAuthFeedback(getAuthErrorMessage(error));
-        return;
-      }
-      console.log("[Auth] Initial session lookup complete", { hasSession: Boolean(data.session) });
-      handleAuthState("INITIAL_SESSION", data.session);
-    }).catch((error) => {
-      console.error("[Auth] Initial session lookup threw", error);
-      showAuthFeedback(getAuthErrorMessage(error));
-    });
-  } else {
-    showAuthFeedback("The cloud service is unavailable. Check your connection and reload.");
-  }
 }
 
-renderDateHeader();
-setMode(currentMode);
+$("#footer-date").textContent = new Intl.DateTimeFormat("en-LK", { dateStyle: "medium" }).format(new Date());
 updateAuthMode();
-updateLiveDateTime();
-setInterval(updateLiveDateTime, 60000);
-
-if (document.readyState === "loading") {
-  document.addEventListener("DOMContentLoaded", initializeAuth, { once: true });
+bindEvents();
+if (supabaseClient) {
+  supabaseClient.auth.onAuthStateChange((event, session) => {
+    if (["INITIAL_SESSION", "SIGNED_IN", "SIGNED_OUT"].includes(event)) handleAuthState(session);
+  });
+  supabaseClient.auth.getSession().then(({ data, error }) => {
+    if (error) throw error;
+    return handleAuthState(data.session);
+  }).catch((error) => { authFeedback.textContent = authError(error); authFeedback.classList.add("is-error"); });
 } else {
-  initializeAuth();
+  authFeedback.textContent = "Cloud service unavailable. Check your connection and reload.";
+  authFeedback.classList.add("is-error");
 }

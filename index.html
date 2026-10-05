@@ -2,204 +2,103 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="A focused, modern todo list for keeping track of what matters.">
-  <title>Daymark | Todo List</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#f5f7f4">
+  <meta name="description" content="Plan your shopping and keep a live, itemized bill.">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="SmartCart">
+  <title>SmartCart &amp; Bill</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='15' fill='%231b5949'/%3E%3Cpath d='M12 16h6l5 25h25l6-18H22' fill='none' stroke='%23fff' stroke-width='4' stroke-linecap='round' stroke-linejoin='round'/%3E%3Ccircle cx='29' cy='49' r='3' fill='%23f3bd54'/%3E%3Ccircle cx='46' cy='49' r='3' fill='%23f3bd54'/%3E%3C/svg%3E">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" defer></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.4/jspdf.plugin.autotable.min.js" defer></script>
   <script src="app.js" defer></script>
 </head>
 <body>
   <section class="auth-screen" id="auth-screen" aria-labelledby="auth-title">
     <div class="auth-card">
-      <div class="brand-lockup auth-brand">
-        <span class="brand-mark" aria-hidden="true">D</span>
-        <div>
-          <p class="eyebrow">Your daily rhythm</p>
-          <h1>Daymark</h1>
-        </div>
-      </div>
+      <div class="brand-lockup auth-brand"><span class="brand-mark" aria-hidden="true">▱</span><div><p class="eyebrow">Shopping, accounted for</p><h1>SmartCart <span>&amp; Bill</span></h1></div></div>
       <p class="eyebrow" id="auth-kicker">Welcome back</p>
-      <h2 id="auth-title">Make room for what matters.</h2>
-      <p class="auth-copy" id="auth-copy">Sign in to keep your plans available wherever you are.</p>
+      <h2 id="auth-title">Ready when you are.</h2>
+      <p class="auth-copy" id="auth-copy">Sign in to manage your list and live bills.</p>
       <form class="auth-form" id="auth-form" novalidate>
-        <label for="auth-email">Email address</label>
-        <input id="auth-email" type="email" autocomplete="email" required>
-        <label for="auth-password">Password</label>
-        <input id="auth-password" type="password" autocomplete="current-password" minlength="6" required>
-        <button class="add-button auth-submit" id="auth-submit" type="submit">Sign in</button>
+        <label for="auth-email">Email address</label><input id="auth-email" type="email" autocomplete="email" required>
+        <label for="auth-password">Password</label><input id="auth-password" type="password" autocomplete="current-password" minlength="6" required>
+        <button class="button button-primary auth-submit" id="auth-submit" type="submit">Sign in</button>
       </form>
       <p class="auth-feedback" id="auth-feedback" role="alert" aria-live="assertive"></p>
-      <button class="auth-toggle" id="auth-toggle" type="button">Need an account? Sign up</button>
+      <button class="text-button auth-toggle" id="auth-toggle" type="button">Need an account? Sign up</button>
     </div>
   </section>
 
   <main class="app-shell" id="app-shell" hidden>
     <header class="app-header">
-      <div class="brand-lockup">
-        <span class="brand-mark" aria-hidden="true">D</span>
-        <div>
-          <p class="eyebrow">Your daily rhythm</p>
-          <h1>Daymark</h1>
-        </div>
-      </div>
-
-      <div class="live-header" aria-live="polite">
-        <span class="eyebrow">Live time</span>
-        <div class="date-display" id="date-display"></div>
-      </div>
-
-      <div class="mode-switch" role="tablist" aria-label="Choose your list type">
-        <button class="mode-button is-active" type="button" data-mode="daily" role="tab" aria-selected="true" aria-controls="daily-panel">Daily Tasks</button>
-        <button class="mode-button" type="button" data-mode="shopping" role="tab" aria-selected="false" aria-controls="shopping-panel">Shopping List</button>
-      </div>
-
-      <div class="account-controls">
-        <span class="account-email" id="account-email"></span>
-        <button class="logout-button" id="logout-button" type="button">Log out</button>
-      </div>
+      <div class="brand-lockup"><span class="brand-mark" aria-hidden="true">▱</span><div><p class="eyebrow">Shopping, accounted for</p><h1>SmartCart <span>&amp; Bill</span></h1></div></div>
+      <div class="account-controls"><span class="account-email" id="account-email"></span><button class="button button-quiet" id="logout-button" type="button">Log out</button></div>
     </header>
 
-    <section class="welcome-panel" aria-labelledby="welcome-title">
-      <div class="welcome-copy-wrap">
-        <p class="eyebrow">Small steps, visible progress</p>
-        <h2 id="welcome-title">Make room for what matters.</h2>
-        <p class="welcome-copy">Capture the next thing, then let momentum do the rest.</p>
-      </div>
+    <nav class="main-tabs" role="tablist" aria-label="Main views">
+      <button class="main-tab is-active" type="button" data-view="shopping" role="tab" aria-selected="true" aria-controls="shopping-view">Shopping list</button>
+      <button class="main-tab" type="button" data-view="billing" role="tab" aria-selected="false" aria-controls="billing-view">Billing <span class="tab-count" id="open-bill-count">0</span></button>
+    </nav>
 
-      <div class="progress-orbit" aria-hidden="true">
-        <span class="progress-number" id="progress-number">0%</span>
-        <span class="progress-label">complete</span>
+    <section class="app-view is-active" id="shopping-view" data-panel="shopping" role="tabpanel">
+      <div class="view-heading"><div><p class="eyebrow">Your next shop</p><h2>Shopping list</h2><p class="view-copy">Check an item off to add its actual price to a bill.</p></div><span class="count-badge" id="shopping-count">0 items</span></div>
+      <form class="shopping-form" id="shopping-form">
+        <label class="sr-only" for="shopping-name">Item name</label><input id="shopping-name" type="text" maxlength="100" placeholder="What do you need?" required>
+        <label class="sr-only" for="shopping-quantity">Planned quantity or note</label><input id="shopping-quantity" type="text" maxlength="80" placeholder="Quantity or note (optional)">
+        <button class="button button-primary" type="submit"><span aria-hidden="true">+</span> Add item</button>
+      </form>
+      <div class="list-toolbar"><div class="filter-tabs" role="group" aria-label="Filter shopping items"><button class="filter-button is-active" data-filter="all" type="button">All</button><button class="filter-button" data-filter="pending" type="button">To buy</button><button class="filter-button" data-filter="marked" type="button">Bought</button></div><span class="list-hint" id="list-hint"></span></div>
+      <div class="shopping-list" id="shopping-list" aria-live="polite"></div>
+      <div class="empty-state" id="shopping-empty"><span class="empty-icon" aria-hidden="true">＋</span><h3>Your list starts here</h3><p>Add the items you want to pick up.</p></div>
+    </section>
+
+    <section class="app-view" id="billing-view" data-panel="billing" role="tabpanel" hidden>
+      <div class="view-heading"><div><p class="eyebrow">At the checkout</p><h2>Live billing</h2><p class="view-copy">Keep each shop in its own itemized bill.</p></div></div>
+      <form class="bill-create-form" id="bill-create-form"><label class="sr-only" for="new-bill-title">Bill name</label><input id="new-bill-title" type="text" maxlength="100" placeholder="Name a bill, e.g. Keells Super" required><button class="button button-primary" type="submit"><span aria-hidden="true">+</span> New bill</button></form>
+      <div class="billing-layout">
+        <aside class="bill-rail" aria-label="Bills"><div class="rail-heading"><h3>Your bills</h3><span id="bill-count">0</span></div><div class="bill-list" id="bill-list"></div><div class="empty-rail" id="bill-empty">No bills yet. Create one to get started.</div></aside>
+        <section class="bill-detail" id="bill-detail" aria-live="polite"><div class="bill-empty-state" id="bill-detail-empty"><span class="empty-icon" aria-hidden="true">▤</span><h3>Select or create a bill</h3><p>Items recorded from your shopping list will appear here.</p></div>
+          <div id="bill-content" hidden>
+            <div class="bill-title-row"><div><p class="eyebrow" id="bill-status-label">Open bill</p><h3 id="bill-title"></h3><p class="bill-date" id="bill-date"></p></div><div class="bill-actions"><button class="icon-button" id="rename-bill-button" type="button" aria-label="Rename bill" title="Rename bill">✎</button><button class="icon-button danger-icon" id="delete-bill-button" type="button" aria-label="Delete bill" title="Delete bill">×</button></div></div>
+            <div class="bill-table-wrap"><table class="bill-table"><thead><tr><th>Item</th><th>Qty</th><th>Rate</th><th>Discount</th><th class="number-cell">Net (LKR)</th></tr></thead><tbody id="bill-items-body"></tbody></table><div class="bill-items-empty" id="bill-items-empty">No items in this bill yet.</div></div>
+            <div class="bill-totals"><div><span>Gross amount</span><strong id="bill-gross">LKR 0.00</strong></div><div><span>Discounts</span><strong class="discount-total" id="bill-discounts">− LKR 0.00</strong></div><div class="payable"><span>Net payable</span><strong id="bill-net">LKR 0.00</strong></div></div>
+            <button class="button button-primary pdf-button" id="download-pdf" type="button"><span aria-hidden="true">↓</span> Download Bill PDF</button>
+          </div>
+        </section>
       </div>
     </section>
 
-    <section class="list-shell" aria-label="Task and shopping list controls">
-      <div class="selected-date-label" id="selected-date-label" aria-live="polite">Today</div>
-
-      <div class="date-nav-bar" aria-label="Date navigation">
-        <button class="nav-button" id="prev-date" type="button" aria-label="Previous day">&#8249;</button>
-        <div class="date-nav-label" id="date-nav-label">Sunday, Sep 13, 2026</div>
-        <button class="nav-button" id="next-date" type="button" aria-label="Next day">&#8250;</button>
-      </div>
-
-      <div class="date-utility-row">
-        <label class="date-picker-wrap" aria-label="Select a date">
-          <span class="sr-only">Select date</span>
-          <input id="date-picker" type="date" aria-label="Select date">
-        </label>
-        <button class="today-button" id="today-date" type="button">Today</button>
-      </div>
-
-      <div class="past-date-message" id="past-date-message" hidden>Past date: Cannot add new tasks or shopping items</div>
-    </section>
-
-    <div class="panel-view is-active" id="daily-panel" data-panel="daily">
-      <section class="todo-card" aria-label="Todo list">
-        <form class="task-form" id="task-form">
-          <label class="sr-only" for="task-input">What needs doing?</label>
-          <input id="task-input" name="task" type="text" placeholder="What needs doing?" maxlength="120" autocomplete="off" required>
-          <button class="add-button" id="task-add-button" type="submit"><span aria-hidden="true">+</span> Add task</button>
-        </form>
-
-        <div class="list-toolbar">
-          <div class="filter-tabs" role="group" aria-label="Filter tasks">
-            <button class="filter-button is-active" type="button" data-filter="all">All <span class="filter-count" id="all-count">0</span></button>
-            <button class="filter-button" type="button" data-filter="active">Active <span class="filter-count" id="active-count">0</span></button>
-            <button class="filter-button" type="button" data-filter="completed">Done <span class="filter-count" id="completed-count">0</span></button>
-          </div>
-          <button class="clear-button" id="clear-completed" type="button">Clear completed</button>
-        </div>
-
-        <div class="task-list" id="task-list" aria-live="polite"></div>
-        <div class="empty-state" id="empty-state">
-          <span class="empty-icon" aria-hidden="true">+</span>
-          <h3 id="empty-title">Your list is clear.</h3>
-          <p id="empty-copy">Add a task above and give your day a starting point.</p>
-        </div>
-      </section>
-    </div>
-
-    <div class="panel-view" id="shopping-panel" data-panel="shopping">
-      <section class="shopping-card" aria-label="Shopping list">
-        <form class="shopping-form" id="shopping-form">
-          <label class="sr-only" for="shopping-name">Shopping item</label>
-          <input id="shopping-name" name="shopping-item" type="text" placeholder="Item name" maxlength="80" required>
-
-          <label class="sr-only" for="shopping-quantity">Quantity</label>
-          <input id="shopping-quantity" name="shopping-quantity" type="text" maxlength="30" placeholder="Qty / unit" aria-label="Quantity or unit" />
-
-          <label class="sr-only" for="shopping-category">Category</label>
-          <select id="shopping-category" name="shopping-category" aria-label="Shopping category">
-            <option value="Groceries">Groceries</option>
-            <option value="Vegetables">Vegetables</option>
-            <option value="Pharmacy">Pharmacy</option>
-            <option value="Household">Household</option>
-            <option value="Bakery">Bakery</option>
-            <option value="Other">Other</option>
-          </select>
-
-          <button class="add-button shopping-add-button" id="shopping-add-button" type="submit"><span aria-hidden="true">+</span> Add item</button>
-        </form>
-
-        <div class="shopping-filter-bar">
-          <div class="filter-tabs shopping-tabs" role="group" aria-label="Filter shopping items">
-            <button class="filter-button shopping-filter-button is-active" type="button" data-shopping-filter="all">All</button>
-            <button class="filter-button shopping-filter-button" type="button" data-shopping-filter="pending">Pending</button>
-            <button class="filter-button shopping-filter-button" type="button" data-shopping-filter="purchased">Purchased</button>
-          </div>
-
-          <label class="category-filter-wrap">
-            <span>Category</span>
-            <select id="shopping-category-filter" aria-label="Filter by category">
-              <option value="all">All</option>
-              <option value="Groceries">Groceries</option>
-              <option value="Vegetables">Vegetables</option>
-              <option value="Pharmacy">Pharmacy</option>
-              <option value="Household">Household</option>
-              <option value="Bakery">Bakery</option>
-              <option value="Other">Other</option>
-            </select>
-          </label>
-        </div>
-
-        <div class="shopping-toolbar">
-          <button class="clear-button" id="clear-purchased" type="button">Clear Purchased Items</button>
-        </div>
-
-        <div class="shopping-list" id="shopping-list" aria-live="polite"></div>
-        <div class="empty-state shopping-empty" id="shopping-empty">
-          <span class="empty-icon" aria-hidden="true">✓</span>
-          <h3>Your shopping list is empty.</h3>
-          <p>Add the essentials you need for the next trip.</p>
-        </div>
-      </section>
-    </div>
-
-    <footer class="app-footer">
-      <span class="footer-summary" id="task-summary">0 tasks remaining • 0 completed</span>
-      <span class="footer-summary" id="shopping-summary" hidden>0 items remaining • 0 purchased</span>
-      <span class="saved-status"><span class="status-dot" aria-hidden="true"></span> Saved locally</span>
-    </footer>
+    <footer class="app-footer"><span class="saved-status"><span class="status-dot" aria-hidden="true"></span><span id="save-status">Synced to your account</span></span><span id="footer-date"></span></footer>
   </main>
 
-  <div class="modal-overlay" id="confirm-modal" aria-hidden="true" hidden>
-    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="confirm-title" aria-describedby="confirm-message">
-      <div class="modal-icon" aria-hidden="true">!</div>
-      <h3 id="confirm-title">Confirm Deletion</h3>
-      <p id="confirm-message">Are you sure you want to delete this item? This action cannot be undone.</p>
-      <div class="modal-actions">
-        <button class="modal-button modal-button-secondary" id="confirm-cancel" type="button">Cancel</button>
-        <button class="modal-button modal-button-danger" id="confirm-delete" type="button">Delete</button>
-      </div>
-    </div>
+  <div class="modal-overlay" id="record-modal" aria-hidden="true" hidden>
+    <section class="modal-card record-card" role="dialog" aria-modal="true" aria-labelledby="record-title">
+      <div class="modal-heading"><div><p class="eyebrow">Add to your checkout</p><h2 id="record-title">Record to bill</h2></div><button class="icon-button" id="record-close" type="button" aria-label="Close">×</button></div>
+      <p class="record-item-name" id="record-item-name"></p>
+      <form id="record-form">
+        <label for="target-bill">Target bill</label><select id="target-bill" required></select>
+        <div class="new-bill-inline" id="modal-new-bill-wrap" hidden><label for="modal-new-bill">New bill name</label><input id="modal-new-bill" type="text" maxlength="100" placeholder="e.g. Arpico Groceries"></div>
+        <div class="form-grid"><div><label for="actual-qty">Actual quantity</label><input id="actual-qty" type="number" min="0.001" step="any" value="1" inputmode="decimal" required></div><div><label for="qty-unit">Unit</label><select id="qty-unit"><option value="g">g</option><option value="kg">kg</option><option value="ml">ml</option><option value="l">l</option><option value="unit/packet">unit / packet</option><option value="half">half</option><option value="full">full</option></select></div></div>
+        <div class="form-grid"><div><label for="unit-rate">Unit price (LKR)</label><input id="unit-rate" type="number" min="0" step="0.01" inputmode="decimal" placeholder="0.00" required></div><div><label for="price-basis">Price basis</label><select id="price-basis"><option value="1000:g">per 1kg</option><option value="100:g">per 100g</option><option value="1:g">per 1g</option><option value="1000:ml">per 1l</option><option value="100:ml">per 100ml</option><option value="1:ml">per 1ml</option><option value="1:each">per item / pack</option></select></div></div>
+        <div class="discount-row"><div><label for="discount-value">Discount</label><input id="discount-value" type="number" min="0" step="0.01" value="0" inputmode="decimal"></div><fieldset class="discount-switch"><legend>Type</legend><label><input type="radio" name="discount-type" value="LKR" checked><span>LKR</span></label><label><input type="radio" name="discount-type" value="%"><span>%</span></label></fieldset></div>
+        <div class="subtotal-preview"><span>Net item total</span><strong id="subtotal-preview">LKR 0.00</strong></div><p class="form-error" id="record-error" role="alert"></p>
+        <div class="modal-actions"><button class="button button-quiet" id="record-cancel" type="button">Cancel</button><button class="button button-primary" id="record-save" type="submit">Save &amp; Add to Bill</button></div>
+      </form>
+    </section>
   </div>
 
-  <div class="network-status" id="network-status" role="status" aria-live="polite" hidden>
-    <span class="loading-spinner" aria-hidden="true"></span>
-    <span id="network-status-text">Loading your plans...</span>
-  </div>
+  <div class="modal-overlay" id="edit-item-modal" aria-hidden="true" hidden><section class="modal-card" role="dialog" aria-modal="true" aria-labelledby="edit-item-title"><div class="modal-heading"><div><p class="eyebrow">Shopping list</p><h2 id="edit-item-title">Edit item</h2></div><button class="icon-button" id="edit-item-close" type="button" aria-label="Close">×</button></div><form id="edit-item-form"><label for="edit-item-name">Item name</label><input id="edit-item-name" type="text" maxlength="100" required><label for="edit-item-qty">Planned quantity or note</label><input id="edit-item-qty" type="text" maxlength="80"><p class="form-error" id="edit-item-error" role="alert"></p><div class="modal-actions"><button class="button button-quiet" id="edit-item-cancel" type="button">Cancel</button><button class="button button-primary" type="submit">Save changes</button></div></form></section></div>
+
+  <div class="modal-overlay" id="confirm-modal" aria-hidden="true" hidden><section class="modal-card" role="dialog" aria-modal="true" aria-labelledby="confirm-title"><div class="modal-heading"><div><p class="eyebrow">Please confirm</p><h2 id="confirm-title">Delete this?</h2></div><button class="icon-button" id="confirm-close" type="button" aria-label="Close">×</button></div><p id="confirm-message"></p><div class="modal-actions"><button class="button button-quiet" id="confirm-cancel" type="button">Cancel</button><button class="button button-danger" id="confirm-delete" type="button">Delete</button></div></section></div>
+
+  <div class="network-status" id="network-status" role="status" aria-live="polite" hidden><span class="loading-spinner" aria-hidden="true"></span><span id="network-status-text"></span><button class="status-dismiss" id="status-dismiss" type="button" aria-label="Dismiss">×</button></div>
 </body>
 </html>
